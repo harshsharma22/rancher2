@@ -3,7 +3,13 @@ import { Err } from './types';
 
 // YML_REPO=saggiyogesh/rancher-ymls
 // PAT=Github Personal token to pull ymls from private repo
-const { RANCHER_SERVER_API, RANCHER_API_KEY, YML_REPO, PAT, YML_REPO_BRANCH = 'master' } = process.env;
+const {
+  RANCHER_SERVER_API,
+  RANCHER_API_KEY,
+  YML_REPO = 'saggiyogesh/rancher-ymls',
+  PAT,
+  YML_REPO_BRANCH = 'master',
+} = process.env;
 
 export const client = axios.create({
   baseURL: RANCHER_SERVER_API,
@@ -32,4 +38,8 @@ export function createNewError(message: string, code: string) {
   const e = new Error(message) as Err;
   e.code = code;
   return e;
+}
+
+export function btoa(str: string) {
+  return Buffer.from(str, 'binary').toString('base64');
 }

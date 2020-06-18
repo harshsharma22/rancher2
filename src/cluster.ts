@@ -1,22 +1,33 @@
 import assert from 'assert';
 import { client, createNewError } from './utils';
 
+export interface ICluster {
+  name: string;
+  id: string;
+  description?: string;
+  type: string;
+}
+
 export async function getCluster(clusterName: string) {
   assert(clusterName);
   const { data } = await client.get(`/v3/clusters?name=${clusterName}`);
-  return data.data;
+  return (data.data as any) as Array<ICluster>;
 }
 
 export async function getUniqueCluster(clusterName: string) {
   const clusterArr = await getCluster(clusterName);
-  if (clusterArr.length) {
+  if (clusterArr.length > 1) {
     throw createNewError(`Found ${clusterArr.length} clusters with name: ${clusterName}`, 'MULTIPLE_CLUSTERS');
+  }
+
+  if (!clusterArr.length) {
+    throw createNewError(`No project found with name: ${clusterName}`, 'INVALID_CLUSTER_NAME');
   }
 
   return clusterArr[0];
 }
 
-export async function getKubeconfig(clusterId: string) {
+export async function getKubeConfig(clusterId: string) {
   assert(clusterId);
   const { data } = await client.post(`/clusters/${clusterId}?action=generateKubeconfig`);
   return data.config;
@@ -49,5 +60,5 @@ export async function getNamespace(namespaceName: string, clusterId: string) {
   assert(clusterId);
   assert(namespaceName);
   const { data } = await client.get(`clusters/${clusterId}/namespaces?name=${namespaceName}`);
-  return data;
+  return (data.data as any) as Array<INamespace>;
 }
