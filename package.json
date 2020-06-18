@@ -1,0 +1,22 @@
+{
+  "name": "rancher2",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "tsc",
+    "doc": "typedoc --out docs src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Yogesh Agarwal",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.13",
+    "typedoc": "^0.17.7",
+    "typescript": "^3.9.5"
+  }
+}
