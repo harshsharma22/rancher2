@@ -2,12 +2,13 @@
   "name": "rancher2",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "lint": "tsc",
     "doc": "typedoc --out docs src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": "./src/cli.ts",
   "keywords": [],
   "author": "Yogesh Agarwal",
   "license": "MIT",

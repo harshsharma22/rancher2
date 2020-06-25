@@ -10,7 +10,7 @@ export interface ICluster {
 
 export async function getCluster(clusterName: string) {
   assert(clusterName);
-  const { data } = await client.get(`/v3/clusters?name=${clusterName}`);
+  const { data } = await client.get(`/clusters?name=${clusterName}`);
   return (data.data as any) as Array<ICluster>;
 }
 
@@ -21,7 +21,7 @@ export async function getUniqueCluster(clusterName: string) {
   }
 
   if (!clusterArr.length) {
-    throw createNewError(`No project found with name: ${clusterName}`, 'INVALID_CLUSTER_NAME');
+    throw createNewError(`No cluster found with name: ${clusterName}`, 'INVALID_CLUSTER_NAME');
   }
 
   return clusterArr[0];

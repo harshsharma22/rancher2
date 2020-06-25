@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { client, createNewError, getYMLFromGHRepo, btoa } from './utils';
-import { getNamespace, newNamespace } from './cluster';
+import { getNamespace, newNamespace, getCluster, getUniqueCluster } from './cluster';
 import { GenericObjectType } from './types';
 
 export interface IProject {
@@ -10,6 +10,13 @@ export interface IProject {
   name: string;
   type?: string;
   id: string;
+}
+
+export async function getProjectByNameAndClusterId(projectName: string, clusterId: string) {
+  assert(projectName);
+  assert(clusterId);
+  const { data } = await client.get(`projects?name=${projectName}&clusterId=${clusterId}`);
+  return (data.data as any) as Array<IProject>;
 }
 
 export async function getProject(projectName: string) {
@@ -54,7 +61,26 @@ export async function addRegistrySecret(obj: IRegistrySecret) {
 }
 
 export async function getUniqueProject(projectName: string) {
-  const projectArr = await getProject(projectName);
+  if (projectName === 'System') {
+    throw createNewError(
+      'For `System` project, provide it with cluster name. Format: `System:<clusterName>`',
+      'SYSTEM_PROJECT'
+    );
+  }
+
+  let projectArr: IProject[] = [];
+  if (projectName.indexOf(':') > -1) {
+    // has cluster name in project name
+    const [prjName, clusterName] = projectName.split(':');
+    console.log('Fetched cluster name :', clusterName);
+
+    const cluster = await getUniqueCluster(clusterName);
+
+    projectArr = await getProjectByNameAndClusterId(prjName, cluster.id);
+  } else {
+    projectArr = await getProject(projectName);
+  }
+
   if (projectArr.length > 1) {
     throw createNewError(`Found ${projectArr.length} projects with name: ${projectName}`, 'MULTIPLE_PROJECTS');
   }
@@ -77,8 +103,17 @@ export interface IApps {
   labels?: Object;
   annotations?: Object;
   valuesYaml?: string;
+  id: string;
 }
-export async function deployApp(projectName: string, obj: IApps) {
+
+export async function getApp(name: string, projectId: string) {
+  assert(projectId);
+  assert(name);
+  const { data } = await client.get(`/projects/${projectId}/apps?name=${name}`);
+  return (data.data as any) as Array<IApps>;
+}
+
+export async function deployApp(projectName: string, obj: Omit<IApps, 'id'>) {
   const { name, catalogId, template, version, description, labels, annotations, targetNamespace, valuesYaml } = obj;
 
   assert(name);
@@ -102,19 +137,33 @@ export async function deployApp(projectName: string, obj: IApps) {
 
   const externalId = `catalog://?catalog=${catalogId}&template=${template}&version=${version}`;
 
-  const { data } = await client.post(`/projects/${projectId}/apps`, {
-    externalId,
-    targetNamespace,
-    catalogId,
-    description,
-    name,
-    labels,
-    annotations,
-    timeout: 300,
-    wait: true,
-    valuesYaml,
-  });
-  return data;
+  // check if with name app already exists
+  const appsArr = await getApp(name, projectId);
+
+  if (appsArr.length) {
+    // update the existing app
+    const [app] = appsArr;
+    const { data } = await client.post(`/project/${projectId}/apps/${app.id}?action=upgrade`, {
+      externalId,
+      valuesYaml,
+      forceUpgrade: false,
+      answers: {},
+    });
+  } else {
+    // create a new app
+    const { data } = await client.post(`/projects/${projectId}/apps`, {
+      externalId,
+      targetNamespace,
+      description,
+      name,
+      labels,
+      annotations,
+      timeout: 300,
+      wait: true,
+      valuesYaml,
+    });
+    return data;
+  }
 }
 
 export interface ISecret {

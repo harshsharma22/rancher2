@@ -33,3 +33,14 @@ export async function deployES7(projectName: string, name: string, targetNamespa
     valuesYaml: await getYMLFromGHRepo('helm/elasticsearch.yml'),
   });
 }
+
+export async function deployNginxIngress(projectName: string, name: string, targetNamespace = 'nginx-ingress') {
+  await deployApp(projectName, {
+    catalogId: 'nginx',
+    template: 'nginx-ingress',
+    version: '0.5.0',
+    name,
+    targetNamespace,
+    valuesYaml: await getYMLFromGHRepo('helm/nginx-ingress.yml'),
+  });
+}
